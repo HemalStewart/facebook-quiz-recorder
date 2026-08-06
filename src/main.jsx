@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import './styles.css'
 
 const STORAGE_KEY = 'calm-quiz-studio-v1'
+const SETTINGS_KEY = 'calm-quiz-studio-settings-v1'
+const DEFAULT_SETTINGS = { questionSeconds: 10 }
 
 const starterQuestions = [
   { id: 1, question: 'Which planet is known as the Red Planet?', answers: ['Venus', 'Mars', 'Jupiter', 'Mercury'], correct: 1 },
@@ -19,6 +21,15 @@ function readQuestions() {
     return Array.isArray(saved) && saved.length === 5 ? saved : starterQuestions
   } catch {
     return starterQuestions
+  }
+}
+
+function readSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY))
+    return saved && [5, 10, 15, 20, 30].includes(saved.questionSeconds) ? saved : DEFAULT_SETTINGS
+  } catch {
+    return DEFAULT_SETTINGS
   }
 }
 
@@ -45,6 +56,7 @@ function App() {
   const params = new URLSearchParams(window.location.search)
   const [view, setView] = React.useState(params.get('view') === 'player' ? 'player' : 'admin')
   const [questions, setQuestions] = React.useState(readQuestions)
+  const [settings, setSettings] = React.useState(readSettings)
 
   const goTo = (next) => {
     const url = next === 'player' ? '?view=player' : window.location.pathname
@@ -59,11 +71,11 @@ function App() {
   }, [])
 
   return view === 'admin'
-    ? <Admin questions={questions} setQuestions={setQuestions} goTo={goTo} />
-    : <Player questions={questions} goTo={goTo} />
+    ? <Admin questions={questions} setQuestions={setQuestions} settings={settings} setSettings={setSettings} goTo={goTo} />
+    : <Player questions={questions} settings={settings} goTo={goTo} />
 }
 
-function Admin({ questions, setQuestions, goTo }) {
+function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
   const [saved, setSaved] = React.useState(false)
   const updateQuestion = (questionIndex, patch) => {
     setSaved(false)
@@ -76,8 +88,14 @@ function Admin({ questions, setQuestions, goTo }) {
   }
   const save = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(questions))
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     setSaved(true)
     window.setTimeout(() => setSaved(false), 2200)
+  }
+  const openRecorder = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(questions))
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    window.open(`${window.location.pathname}?view=player`, '_blank')
   }
   const complete = questions.filter((item) => item.question.trim() && item.answers.every((answer) => answer.trim())).length
 
@@ -90,7 +108,7 @@ function Admin({ questions, setQuestions, goTo }) {
           <p>Edit each question, add four answers, then select the correct one. Changes stay on this device.</p>
         </div>
         <div className="header-actions">
-          <button className="button button-secondary" onClick={() => window.open(`${window.location.pathname}?view=player`, '_blank')}><Icon name="external" /> Open recorder</button>
+          <button className="button button-secondary" onClick={openRecorder}><Icon name="external" /> Open recorder</button>
           <button className="button button-primary" onClick={save}><Icon name="check" /> {saved ? 'Saved' : 'Save quiz'}</button>
         </div>
       </header>
@@ -98,11 +116,20 @@ function Admin({ questions, setQuestions, goTo }) {
       <main className="admin-main">
         <aside className="status-card">
           <div className="status-ring" style={{ '--progress': `${complete * 20}%` }}><span>{complete}</span><small>/ 5</small></div>
-          <div><strong>Questions ready</strong><p>Five seconds per question, followed by a short answer reveal.</p></div>
+          <div><strong>Questions ready</strong><p>{settings.questionSeconds} seconds per question, followed by a short answer reveal.</p></div>
           <button className="text-button" onClick={() => goTo('player')}><Icon name="play" /> Preview quiz</button>
         </aside>
 
         <section className="editor-list">
+          <motion.section className="settings-card" initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}>
+            <div className="settings-copy">
+              <span className="settings-icon">⏱</span>
+              <div><h2>Quiz timing</h2><p>Choose how long viewers get to answer each question.</p></div>
+            </div>
+            <div className="time-options" role="group" aria-label="Time per question">
+              {[5, 10, 15, 20, 30].map((value) => <button type="button" key={value} className={settings.questionSeconds === value ? 'selected' : ''} onClick={() => { setSaved(false); setSettings({ ...settings, questionSeconds:value }) }}>{value}<small>sec</small></button>)}
+            </div>
+          </motion.section>
           {questions.map((item, questionIndex) => (
             <motion.article className="question-card" key={item.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: questionIndex * .06 }}>
               <div className="question-heading">
@@ -135,20 +162,21 @@ function Admin({ questions, setQuestions, goTo }) {
   )
 }
 
-function Player({ questions, goTo }) {
+function Player({ questions, settings, goTo }) {
+  const questionSeconds = settings.questionSeconds
   const [started, setStarted] = React.useState(false)
   const [finished, setFinished] = React.useState(false)
   const [questionIndex, setQuestionIndex] = React.useState(0)
-  const [seconds, setSeconds] = React.useState(5)
+  const [seconds, setSeconds] = React.useState(questionSeconds)
   const [revealed, setRevealed] = React.useState(false)
 
   const restart = React.useCallback(() => {
     setQuestionIndex(0)
-    setSeconds(5)
+    setSeconds(questionSeconds)
     setRevealed(false)
     setFinished(false)
     setStarted(true)
-  }, [])
+  }, [questionSeconds])
 
   React.useEffect(() => {
     if (!started || finished) return
@@ -158,7 +186,7 @@ function Player({ questions, goTo }) {
           setFinished(true)
         } else {
           setQuestionIndex((index) => index + 1)
-          setSeconds(5)
+          setSeconds(questionSeconds)
           setRevealed(false)
         }
       }, 2800)
@@ -169,7 +197,7 @@ function Player({ questions, goTo }) {
       else setSeconds((value) => value - 1)
     }, 1000)
     return () => window.clearTimeout(timer)
-  }, [started, finished, revealed, seconds, questionIndex, questions.length])
+  }, [started, finished, revealed, seconds, questionIndex, questions.length, questionSeconds])
 
   const current = questions[questionIndex]
   const urgent = !revealed && seconds <= 2
@@ -196,7 +224,7 @@ function Player({ questions, goTo }) {
             <motion.section className="start-screen" key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: .96 }}>
               <span className="eyebrow">Five quick questions</span>
               <h2>Ready to test your knowledge?</h2>
-              <p>You have five seconds to choose each answer.</p>
+              <p>You have {questionSeconds} seconds to choose each answer.</p>
               <button onClick={restart}>Start quiz <Icon name="play" /></button>
             </motion.section>
           ) : finished ? (
@@ -222,7 +250,7 @@ function Player({ questions, goTo }) {
                 })}
               </div>
               <motion.div className={`countdown ${revealed ? 'revealed' : ''} ${urgent ? 'urgent' : ''}`} animate={urgent ? { scale: [1, 1.07, 1] } : { scale: 1 }} transition={urgent ? { duration: .75, repeat: Infinity } : { duration: .2 }}>
-                <svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="33"/><motion.circle className="countdown-line" cx="38" cy="38" r="33" initial={{ pathLength: 1 }} animate={{ pathLength: revealed ? 1 : seconds / 5 }} transition={{ duration: .45, ease: 'easeOut' }} /></svg>
+                <svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="33"/><motion.circle className="countdown-line" cx="38" cy="38" r="33" initial={{ pathLength: 1 }} animate={{ pathLength: revealed ? 1 : seconds / questionSeconds }} transition={{ duration: .45, ease: 'easeOut' }} /></svg>
                 <AnimatePresence mode="wait"><motion.span key={revealed ? 'answer' : seconds} initial={{ opacity: 0, scale: .65 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.15 }} transition={{ duration:.16 }}>{revealed ? <AnimatedCheck /> : seconds}</motion.span></AnimatePresence>
               </motion.div>
               <motion.p className={`countdown-copy ${revealed ? 'is-correct' : ''}`} animate={{ opacity:1, y:0 }}>{revealed ? 'Correct answer' : urgent ? 'Lock in your answer' : 'Take a breath and choose'}</motion.p>
