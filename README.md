@@ -17,6 +17,11 @@ Open the local address shown, write your five questions, pick a template, then h
 
 ## Templates
 
+Eleven templates in two families. The admin UI is deliberately plain — flat white
+surfaces, one accent colour — so the only thing with visual personality is the reel.
+
+### Motion (6)
+
 | Template    | Look                          | Motion layer   |
 | ----------- | ----------------------------- | -------------- |
 | Neon Arcade | Cyan + magenta on violet      | Light streaks  |
@@ -29,12 +34,20 @@ Open the local address shown, write your five questions, pick a template, then h
 Motion layers are canvas particle systems drawn at native reel resolution, over a
 faint colour wash and an animated film-grain overlay. Nothing is a static image.
 
-### Your own video backdrops
+### Sri Lankan heritage video (5)
 
-Drop a looping mp4 into `public/bg/` named after the template id (`neon.mp4`,
-`luxe.mp4`, …) and it plays behind that template automatically. Missing files are
-ignored, so the folder can stay empty. See `public/bg/README.md` for specs and
-free, commercially usable sources.
+| Template       | Footage                         |
+| -------------- | ------------------------------- |
+| Sigiriya       | The rock fortress under sky     |
+| Anuradhapura   | White stupa in green landscape  |
+| Kandy          | Buddha statue at Kandy          |
+| Ancient Ceylon | Statue against landscape        |
+| Hill Country   | Aerial over lake and hills      |
+
+These play real 1080x1920 footage shipped in `public/bg/`. Legibility is handled by
+a flat scrim plus solid answer cards and text shadow — no colour gradients — so the
+question stays readable over any frame of the video. Swap in your own clips or add
+more templates: see `public/bg/README.md`.
 
 ## Controls
 

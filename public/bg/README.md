@@ -1,27 +1,56 @@
-# Optional video backdrops
+# Video backdrops
 
-Drop a looping video in this folder named after the template id and the recorder
-will play it behind that template's frame automatically. No code change needed.
+## What's already here
 
-| Template     | File name     |
-| ------------ | ------------- |
-| Neon Arcade  | `neon.mp4`    |
-| Sunset Pop   | `sunset.mp4`  |
-| Cyber Grid   | `cyber.mp4`   |
-| Bubblegum    | `bubble.mp4`  |
-| Gold Luxe    | `luxe.mp4`    |
-| Aurora Flow  | `aurora.mp4`  |
+Five Sri Lankan heritage clips, all native **1080x1920**, each paired with a `.jpg`
+poster frame generated from it:
 
-If a file isn't here, the template falls back to its canvas motion layer, so this
-folder can stay empty.
+| File           | Subject                          | Used by template |
+| -------------- | -------------------------------- | ---------------- |
+| `sigiriya.mp4` | Sigiriya rock fortress           | Sigiriya         |
+| `stupa.mp4`    | White stupa in green landscape   | Anuradhapura     |
+| `buddha.mp4`   | Buddha statue at Kandy           | Kandy            |
+| `buddha2.mp4`  | Buddha statue against landscape  | Ancient Ceylon   |
+| `hills.mp4`    | Aerial over lake and hills       | Hill Country     |
 
-**What works best:** a 1080x1920 (or larger 9:16) seamless loop, 5-15 seconds,
-dark and low-contrast so the question text stays readable. The video is rendered
-at 50% opacity underneath the particle layer — edit `.bd-video` in
-`src/styles.css` to change that.
+Source: [Pexels](https://www.pexels.com/videos/). The Pexels licence allows free
+commercial use with no attribution required — but the licence sits with each
+individual clip, so re-check any clip you swap in. None of these are AI-generated;
+Pexels serves those from a separate `content.pexels.com/aigc-bundle/` path, which
+was deliberately avoided.
 
-**Where to get them free for commercial use:** Pexels, Pixabay, Mixkit and
-Videvo all allow commercial reuse without attribution. Prefer real footage
-(bokeh lights, ink in water, smoke, city lights at night, fabric, dust motes)
-over generated abstract loops — real footage is what stops the frame looking
-machine-made. Always check the licence on the individual clip.
+The `.jpg` posters are what the admin template picker shows, and they are also the
+`poster` attribute on the stage video so the frame is never blank while buffering.
+Five 1080x1920 videos decoding at once will stall the picker, which is why it uses
+stills.
+
+## Adding your own
+
+Name the file after the template id (`neon.mp4`, `luxe.mp4`, …) and it plays behind
+that template automatically. Templates in the heritage family instead point at an
+explicit filename via the `video` field in `src/templates.js`. A missing file is
+ignored, so nothing breaks if you delete these.
+
+Generate a matching poster with:
+
+```bash
+ffmpeg -y -ss 1 -i yourclip.mp4 -frames:v 1 -vf "scale=400:-2" -q:v 6 yourclip.jpg
+```
+
+**What works best:** a seamless 1080x1920 loop, 5-15 seconds, without a busy or
+high-contrast centre — the question text sits over the middle third. Dark footage
+needs less scrim. Adjust `.bd-scrim` in `src/styles.css` if a clip is too bright.
+
+**Free for commercial use:** Pexels, Pixabay, Mixkit, Videvo, and Wikimedia Commons
+(check the per-file licence there — many are CC BY-SA and need attribution). Prefer
+real footage over generated abstract loops.
+
+## Repo size
+
+These five clips total about 99 MB. If you'd rather not commit that, add
+
+```
+public/bg/*.mp4
+```
+
+to `.gitignore` and keep only the small `.jpg` posters in version control.

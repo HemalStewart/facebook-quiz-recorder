@@ -330,7 +330,7 @@ function Confetti({ colors }) {
 function Player({ questions, settings, setSettings, goTo }) {
   const questionSeconds = settings.questionSeconds
   const template = getTemplate(settings.templateId)
-  const [started, setStarted] = React.useState(true) // TEMP-VERIFY
+  const [started, setStarted] = React.useState(false)
   const [finished, setFinished] = React.useState(false)
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [seconds, setSeconds] = React.useState(questionSeconds)

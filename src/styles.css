@@ -191,14 +191,19 @@ textarea:focus, .answer-field:focus-within { border-color: var(--accent); box-sh
 .countdown { position: relative; width: 200px; height: 200px; margin: auto auto 0; display: grid; place-items: center; will-change: transform; }
 /* No backdrop-filter here: Chrome clips the filtered region to the square border
    box, which showed as a lighter square behind the ring. */
-.countdown:after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: rgba(0, 0, 0, .28); border: 1px solid var(--t-card-line); z-index: -1; }
+.countdown:after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: rgba(0, 0, 0, .28); border: 1px solid var(--t-card-line); box-shadow: 0 0 26px color-mix(in srgb, var(--t-accent) 40%, transparent); z-index: -1; }
 .countdown > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .countdown > svg circle { fill: none; stroke: var(--t-card-line); stroke-width: 8; }
-.countdown > svg .countdown-line { stroke: var(--t-accent); stroke-linecap: round; filter: drop-shadow(0 0 14px var(--t-accent)); }
+/* No filter on the SVG ring: a filter region is rectangular, and Chrome
+   rasterises it as a visible square patch over the backdrop. The glow is a
+   circular box-shadow on the disc below instead. */
+.countdown > svg .countdown-line { stroke: var(--t-accent); stroke-linecap: round; }
 .countdown > span { display: grid; place-items: center; font-size: 84px; font-weight: 900; letter-spacing: -.04em; }
-.countdown.urgent > svg .countdown-line { stroke: var(--t-warn); filter: drop-shadow(0 0 18px var(--t-warn)); }
+.countdown.urgent > svg .countdown-line { stroke: var(--t-warn); }
+.countdown.urgent:after { box-shadow: 0 0 30px color-mix(in srgb, var(--t-warn) 55%, transparent); }
 .countdown.urgent > span { color: var(--t-warn); }
-.countdown.revealed > svg .countdown-line { stroke: var(--t-correct); filter: drop-shadow(0 0 18px var(--t-correct)); }
+.countdown.revealed > svg .countdown-line { stroke: var(--t-correct); }
+.countdown.revealed:after { box-shadow: 0 0 32px color-mix(in srgb, var(--t-correct) 60%, transparent); }
 .countdown.revealed:after { background: var(--t-correct); border-color: transparent; }
 .animated-check { display: block; width: 70px; height: 70px; color: var(--t-correct); overflow: visible; }
 .countdown.revealed .animated-check { width: 92px; height: 92px; color: #08060f; }
