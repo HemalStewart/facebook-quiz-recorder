@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { AnimatePresence, motion } from 'framer-motion'
 import Backdrop from './Backdrop.jsx'
-import { TEMPLATES, DEFAULT_TEMPLATE, getTemplate } from './templates.js'
+import { TEMPLATES, FAMILIES, DEFAULT_TEMPLATE, getTemplate } from './templates.js'
 import { sound } from './sound.js'
 import './styles.css'
 
@@ -19,15 +19,17 @@ const DEFAULT_SETTINGS = { questionSeconds: 10, templateId: DEFAULT_TEMPLATE, so
 
 // Auto-fit: longer copy steps down a size so every question fills the same block
 // without ever overflowing the 1080x1920 frame.
+// Floors are set so text stays legible when a 1080-wide reel is watched on a
+// phone at roughly a third of that width — nothing drops below ~62px/40px.
 function fitQuestion(text, scale) {
   const length = (text || '').trim().length
-  const base = length > 95 ? 52 : length > 78 ? 58 : length > 60 ? 66 : length > 42 ? 74 : length > 26 ? 84 : 94
+  const base = length > 95 ? 62 : length > 78 ? 68 : length > 60 ? 76 : length > 42 ? 84 : length > 26 ? 92 : 100
   return Math.round(base * scale)
 }
 
 function fitAnswers(answers, scale) {
   const longest = answers.reduce((max, item) => Math.max(max, (item || '').trim().length), 0)
-  const base = longest > 38 ? 30 : longest > 30 ? 34 : longest > 22 ? 38 : longest > 14 ? 43 : 48
+  const base = longest > 38 ? 40 : longest > 30 ? 44 : longest > 22 ? 48 : longest > 14 ? 52 : 56
   return Math.round(base * scale)
 }
 
@@ -120,6 +122,8 @@ function TemplateCard({ template, selected, onSelect }) {
   return (
     <button type="button" className={`template-card ${selected ? 'selected' : ''}`} onClick={onSelect} style={template.vars}>
       <span className="template-preview">
+        {/* Muted, paused-on-first-frame video doubles as the thumbnail. */}
+        {template.video ? <video className="preview-shot" src={`${import.meta.env.BASE_URL}bg/${template.video}`} muted playsInline preload="metadata" /> : null}
         <Backdrop kind={template.backdrop} />
         <span className="mini">
           <span className="mini-bar" />
@@ -196,13 +200,22 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
           <motion.section className="panel" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
             <div className="panel-head">
               <span className="panel-icon">🎨</span>
-              <div><h2>Template</h2><p>Each one has its own colour system and animated background.</p></div>
+              <div><h2>Template</h2><p>Motion templates draw their own background. Heritage templates play real Sri Lankan footage behind a scrim.</p></div>
             </div>
-            <div className="template-grid">
-              {TEMPLATES.map((template) => (
-                <TemplateCard key={template.id} template={template} selected={settings.templateId === template.id} onSelect={() => patchSettings({ templateId: template.id })} />
-              ))}
-            </div>
+            {FAMILIES.map((family) => {
+              const items = TEMPLATES.filter((template) => (template.family || 'motion') === family.id)
+              if (!items.length) return null
+              return (
+                <div className="template-group" key={family.id}>
+                  <div className="template-group-label">{family.label} <em>{family.note}</em></div>
+                  <div className="template-grid">
+                    {items.map((template) => (
+                      <TemplateCard key={template.id} template={template} selected={settings.templateId === template.id} onSelect={() => patchSettings({ templateId: template.id })} />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </motion.section>
 
           <motion.section className="panel row" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04 }}>
@@ -400,12 +413,12 @@ function Player({ questions, settings, setSettings, goTo }) {
         {/* Scale lives on a plain wrapper so framer-motion can own the stage transform. */}
         <div className="stage-scale" style={{ transform: `scale(${scale})` }}>
         <motion.main
-          className={`stage ${urgent ? 'is-urgent' : ''}`}
+          className={`stage ${urgent ? 'is-urgent' : ''} ${template.backdrop === 'photo' ? 'is-photo' : ''}`}
           style={template.vars}
           animate={revealed ? { x: [0, -7, 6, -3, 0] } : { x: 0 }}
           transition={{ duration: .32 }}
         >
-          <Backdrop kind={template.backdrop} />
+          <Backdrop kind={template.backdrop} motion={template.motion} colors={accentColors} video={`${import.meta.env.BASE_URL}bg/${template.video || `${template.id}.mp4`}`} />
           <div className="stage-vignette" />
           <div className="urgent-pulse" />
 
