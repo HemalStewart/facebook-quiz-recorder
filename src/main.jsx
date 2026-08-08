@@ -167,7 +167,14 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
   }
   const openRecorder = () => {
     persist()
-    window.open(`${window.location.pathname}?view=player`, '_blank')
+    // Opening a new tab is convenient for recording, but popup blockers can
+    // silently return null here. Fall back to the same tab so the button never
+    // appears to do nothing.
+    const recorderUrl = new URL(window.location.href)
+    recorderUrl.search = '?view=player'
+    recorderUrl.hash = ''
+    const recorderWindow = window.open(recorderUrl.href, '_blank', 'noopener,noreferrer')
+    if (!recorderWindow) window.location.assign(recorderUrl.href)
   }
   const complete = questions.filter((item) => item.question.trim() && item.answers.every((answer) => answer.trim())).length
   const runtime = Math.round(4 + questions.length * (settings.questionSeconds + REVEAL_MS / 1000) + 6)
