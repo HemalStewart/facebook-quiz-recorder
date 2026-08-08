@@ -105,7 +105,8 @@ function VideoLayer({ src }) {
   const [failed, setFailed] = React.useState(false)
   React.useEffect(() => setFailed(false), [src])
   if (failed) return null
-  return <video className="bd-video" src={src} autoPlay muted loop playsInline onError={() => setFailed(true)} />
+  // The poster paints instantly so the frame is never empty while the video buffers.
+  return <video className="bd-video" src={src} poster={src.replace(/\.mp4$/, '.jpg')} autoPlay muted loop playsInline onError={() => setFailed(true)} />
 }
 
 // `motion` and `colors` are only passed by the recorder — the admin thumbnails

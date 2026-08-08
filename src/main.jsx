@@ -122,8 +122,8 @@ function TemplateCard({ template, selected, onSelect }) {
   return (
     <button type="button" className={`template-card ${selected ? 'selected' : ''}`} onClick={onSelect} style={template.vars}>
       <span className="template-preview">
-        {/* Muted, paused-on-first-frame video doubles as the thumbnail. */}
-        {template.video ? <video className="preview-shot" src={`${import.meta.env.BASE_URL}bg/${template.video}`} muted playsInline preload="metadata" /> : null}
+        {/* A poster still, not the video: five 1080x1920 decoders at once stalls the page. */}
+        {template.video ? <img className="preview-shot" src={`${import.meta.env.BASE_URL}bg/${template.video.replace(/\.mp4$/, '.jpg')}`} alt="" loading="lazy" /> : null}
         <Backdrop kind={template.backdrop} />
         <span className="mini">
           <span className="mini-bar" />
@@ -330,7 +330,7 @@ function Confetti({ colors }) {
 function Player({ questions, settings, setSettings, goTo }) {
   const questionSeconds = settings.questionSeconds
   const template = getTemplate(settings.templateId)
-  const [started, setStarted] = React.useState(false)
+  const [started, setStarted] = React.useState(true) // TEMP-VERIFY
   const [finished, setFinished] = React.useState(false)
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [seconds, setSeconds] = React.useState(questionSeconds)
