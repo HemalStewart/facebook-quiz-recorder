@@ -277,16 +277,33 @@ export default function Motion({ kind, colors }) {
     const ctx = canvas.getContext('2d')
     const system = build(colors)
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const mobile = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0
+    const frameInterval = mobile ? 1000 / 30 : 1000 / 60
     let raf = 0
     let last = performance.now()
+    let lastRender = last
 
     const render = () => {
       ctx.clearRect(0, 0, W, H)
       system.draw(ctx)
     }
     const frame = (now) => {
+      // Mobile browsers are much more aggressive about killing hot tabs. Keep
+      // the reel smooth enough to record while avoiding a full canvas redraw
+      // on every 60 Hz tick, and do no work while the tab is backgrounded.
+      if (document.hidden) {
+        last = now
+        lastRender = now
+        raf = requestAnimationFrame(frame)
+        return
+      }
+      if (now - lastRender < frameInterval) {
+        raf = requestAnimationFrame(frame)
+        return
+      }
       const dt = Math.min(3, (now - last) / 16.67)
       last = now
+      lastRender = now
       system.update(dt)
       render()
       raf = requestAnimationFrame(frame)
@@ -295,7 +312,10 @@ export default function Motion({ kind, colors }) {
     // Seed a frame immediately so the texture is present even before rAF runs.
     system.update(0)
     render()
-    if (!reduced) raf = requestAnimationFrame(frame)
+    // On touch devices, keep the canvas static. This still gives the recorder
+    // a complete designed background, while avoiding iOS tab termination from
+    // a continuously animated 1080x1920 canvas during a long recording.
+    if (!reduced && !mobile) raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, key])

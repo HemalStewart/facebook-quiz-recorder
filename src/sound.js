@@ -65,7 +65,6 @@ function noise({ dur = 0.3, gain = 0.14, from = 900, to = 200, delay = 0, q = 1 
 export const sound = {
   setMuted(value) {
     muted = value
-    if (!value) ensure()
   },
   isMuted() {
     return muted
