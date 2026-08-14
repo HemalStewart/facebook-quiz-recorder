@@ -51,13 +51,14 @@ more templates: see `public/bg/README.md`.
 
 ## Controls
 
-- **Timer** — 3, 5, 10, 15, 20 or 30 seconds per question. 5–10s holds retention best.
+- **Timer** — every question uses a fixed 5-second answer timer after the question is read.
+- **Sinhala narration** — the local Vite server generates Sinhala MP3 audio with the free server-side Microsoft Edge Read Aloud voice, then the recorder starts the 5-second timer. It needs an internet connection but no API key or installed voice pack; the browser/device voice is only a fallback.
 - **Text size** — S / M / L. Question and answer type also **auto-fits**: longer copy
   steps down a size automatically so nothing ever overflows the frame.
 - **Sound** — a blip each second, a tighter urgent blip in the last three, a bass beat
   the moment the clock hits zero, a chime on the reveal, and a fanfare at the end.
   All synthesised with the Web Audio API — no audio files, nothing to license.
-- **Channel name** — shown top-left on every frame so re-uploads still credit you.
+- **Clean frame** — the recorder leaves the top and bottom corners empty so Facebook/Instagram Reel controls do not cover quiz content.
 
 ## Recording
 

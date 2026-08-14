@@ -8,14 +8,14 @@ import './styles.css'
 
 const STORAGE_KEY = 'calm-quiz-studio-v1'
 const SETTINGS_KEY = 'calm-quiz-studio-settings-v1'
-const TIME_CHOICES = [3, 5, 10, 15, 20, 30]
+const TIME_CHOICES = [5]
 const REVEAL_MS = 2600
 const TEXT_SCALES = [
   { id: 'sm', label: 'S', value: 0.88 },
   { id: 'md', label: 'M', value: 1 },
   { id: 'lg', label: 'L', value: 1.14 },
 ]
-const DEFAULT_SETTINGS = { questionSeconds: 10, templateId: DEFAULT_TEMPLATE, sound: true, brand: 'QUIZ TIME', textScale: 'md' }
+const DEFAULT_SETTINGS = { questionSeconds: 5, templateId: DEFAULT_TEMPLATE, sound: true, readQuestion: true, brand: 'QUIZ TIME', textScale: 'md' }
 
 // Auto-fit: longer copy steps down a size so every question fills the same block
 // without ever overflowing the 1080x1920 frame.
@@ -38,12 +38,12 @@ function fitAnswers(answers, scale) {
 const STAGE_W = 1080
 const STAGE_H = 1920
 
-const starterQuestions = [
-  { id: 1, question: 'Which planet is known as the Red Planet?', answers: ['Venus', 'Mars', 'Jupiter', 'Mercury'], correct: 1 },
-  { id: 2, question: 'What is the largest ocean on Earth?', answers: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], correct: 3 },
-  { id: 3, question: 'How many sides does a hexagon have?', answers: ['Five', 'Six', 'Seven', 'Eight'], correct: 1 },
-  { id: 4, question: 'Which animal is the fastest on land?', answers: ['Lion', 'Horse', 'Cheetah', 'Leopard'], correct: 2 },
-  { id: 5, question: 'What is the capital city of Japan?', answers: ['Seoul', 'Tokyo', 'Kyoto', 'Beijing'], correct: 1 },
+const sinhalaSampleQuestions = [
+  { id: 1, question: 'ශ්‍රී ලංකාවේ අගනුවර ලෙස සැලකෙන නගරය කුමක්ද?', answers: ['ශ්‍රී ජයවර්ධනපුර කෝට්ටේ', 'කොළඹ', 'මහනුවර', 'ගාල්ල'], correct: 0 },
+  { id: 2, question: 'සිගිරිය ඉදිකළ රජු කවුද?', answers: ['කාශ්‍යප රජු', 'දුටුගැමුණු රජු', 'පරාක්‍රමබාහු රජු', 'වළගම්බා රජු'], correct: 0 },
+  { id: 3, question: 'ශ්‍රී ලංකාවේ ජාතික මල කුමක්ද?', answers: ['නිල් මානෙල්', 'අරලිය', 'නා මල', 'රෝස මල'], correct: 0 },
+  { id: 4, question: 'ලෝකයේ විශාලතම සාගරය කුමක්ද?', answers: ['පැසිෆික් සාගරය', 'අත්ලාන්තික් සාගරය', 'ඉන්දියානු සාගරය', 'ආක්ටික් සාගරය'], correct: 0 },
+  { id: 5, question: 'ශ්‍රී ලංකාවේ උසම කන්ද කුමක්ද?', answers: ['පිදුරුතලාගල', 'ශ්‍රී පාදය', 'නකල්ස් කඳුවැටිය', 'කිරිගල්පොත්ත'], correct: 0 },
 ]
 
 const HYPE = ['Only 1% get this', 'Keep the streak alive', 'This one is tricky', 'Almost there', 'Final question!']
@@ -51,19 +51,23 @@ const HYPE = ['Only 1% get this', 'Keep the streak alive', 'This one is tricky',
 function readQuestions() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY))
-    return Array.isArray(saved) && saved.length === 5 ? saved : starterQuestions
+    return Array.isArray(saved) && saved.length === 5 ? saved : sinhalaSampleQuestions
   } catch {
-    return starterQuestions
+    return sinhalaSampleQuestions
   }
 }
 
 function readSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}
+    const hasNarrationSetting = typeof saved.readQuestion === 'boolean'
     return {
-      questionSeconds: TIME_CHOICES.includes(saved.questionSeconds) ? saved.questionSeconds : DEFAULT_SETTINGS.questionSeconds,
+      // A previous version defaulted to 10s. When upgrading that saved shape,
+      // use the new read-then-5s flow once; later user choices are preserved.
+      questionSeconds: hasNarrationSetting && TIME_CHOICES.includes(saved.questionSeconds) ? saved.questionSeconds : DEFAULT_SETTINGS.questionSeconds,
       templateId: TEMPLATES.some((item) => item.id === saved.templateId) ? saved.templateId : DEFAULT_SETTINGS.templateId,
       sound: typeof saved.sound === 'boolean' ? saved.sound : true,
+      readQuestion: true,
       brand: typeof saved.brand === 'string' ? saved.brand.slice(0, 18) : DEFAULT_SETTINGS.brand,
       textScale: TEXT_SCALES.some((item) => item.id === saved.textScale) ? saved.textScale : DEFAULT_SETTINGS.textScale,
     }
@@ -81,6 +85,7 @@ function Icon({ name }) {
     external: <><path d="M15 3h6v6" /><path d="m10 14 11-11" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></>,
     sound: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></>,
     mute: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="m17 9 5 6" /><path d="m22 9-5 6" /></>,
+    voice: <><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" /><path d="M8 22h8" /></>,
   }
   return <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
@@ -228,7 +233,7 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
           <motion.section className="panel row" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .04 }}>
             <div className="panel-head">
               <span className="panel-icon">⏱</span>
-              <div><h2>Timing, text &amp; sound</h2><p>Shorter timers keep retention high. 5&ndash;10s works best. Text auto-fits &mdash; S/M/L nudges it.</p></div>
+              <div><h2>Timing, text &amp; sound</h2><p>The Sinhala question is read first, then viewers get 5 seconds to answer. Text auto-fits &mdash; S/M/L nudges it. Free Sinhala audio needs an internet connection.</p></div>
             </div>
             <div className="control-stack">
               <div className="time-options" role="group" aria-label="Time per question">
@@ -249,14 +254,6 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
                 </label>
               </div>
             </div>
-          </motion.section>
-
-          <motion.section className="panel row" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08 }}>
-            <div className="panel-head">
-              <span className="panel-icon">@</span>
-              <div><h2>Channel name</h2><p>Shown in the top corner of every frame so re-uploads still credit you.</p></div>
-            </div>
-            <input className="brand-input" maxLength="18" value={settings.brand} placeholder="YOUR HANDLE" onChange={(event) => patchSettings({ brand: event.target.value })} />
           </motion.section>
 
           {questions.map((item, questionIndex) => (
@@ -283,6 +280,7 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
           ))}
 
           <div className="bottom-actions">
+            <button className="button button-secondary" onClick={() => { setQuestions(sinhalaSampleQuestions.map((item) => ({ ...item, answers: [...item.answers] }))); setSaved(false) }}>Load Sinhala samples</button>
             <button className="button button-primary" onClick={save}><Icon name="check" /> Save all questions</button>
             <button className="button button-secondary" onClick={() => goTo('player')}><Icon name="play" /> Preview recording</button>
           </div>
@@ -334,6 +332,85 @@ function Confetti({ colors }) {
   )
 }
 
+function getSinhalaVoice() {
+  if (!('speechSynthesis' in window)) return null
+  const voices = window.speechSynthesis.getVoices()
+  return voices.find((voice) => /^si([-_]LK)?$/i.test(voice.lang))
+    || voices.find((voice) => /sinhala|sri\s*lanka/i.test(`${voice.name} ${voice.lang}`))
+    || null
+}
+
+function speakWithBrowserVoice(text, onDone) {
+  if (!('speechSynthesis' in window)) {
+    onDone()
+    return () => {}
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text)
+  const voice = getSinhalaVoice()
+  utterance.lang = 'si-LK'
+  if (voice) utterance.voice = voice
+  utterance.rate = 0.86
+  utterance.pitch = 1
+  utterance.onend = onDone
+  utterance.onerror = onDone
+  window.speechSynthesis.cancel()
+  window.speechSynthesis.speak(utterance)
+  return () => {
+    utterance.onend = null
+    utterance.onerror = null
+    window.speechSynthesis.cancel()
+  }
+}
+
+// The local Vite endpoint uses Microsoft's free Edge Read Aloud Sinhala voice
+// server-side, avoiding browser CORS and installed-voice problems.
+function playSinhala(text, onDone, sharedAudio = null) {
+  if (!text || typeof Audio === 'undefined') return speakWithBrowserVoice(text, onDone)
+
+  const audio = sharedAudio || new Audio()
+  audio.src = `/api/sinhala-tts?text=${encodeURIComponent(text)}`
+  audio.preload = 'auto'
+  audio.playsInline = true
+  audio.volume = 1
+  let cancelled = false
+  let fallbackStop = null
+  let fallbackTimer = null
+
+  const stopAudio = () => {
+    if (fallbackTimer) window.clearTimeout(fallbackTimer)
+    audio.onended = null
+    audio.onerror = null
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+  }
+
+  const useFallback = () => {
+    if (cancelled) return
+    stopAudio()
+    fallbackStop = speakWithBrowserVoice(text, onDone)
+  }
+
+  audio.onended = () => {
+    if (cancelled) return
+    stopAudio()
+    onDone()
+  }
+  audio.onerror = useFallback
+  audio.load()
+  const playRequest = audio.play()
+  playRequest?.catch(useFallback)
+  // Do not leave the quiz waiting forever if a network request stalls.
+  fallbackTimer = window.setTimeout(useFallback, 7000)
+
+  return () => {
+    cancelled = true
+    stopAudio()
+    fallbackStop?.()
+  }
+}
+
 function Player({ questions, settings, setSettings, goTo }) {
   const questionSeconds = settings.questionSeconds
   const template = getTemplate(settings.templateId)
@@ -342,7 +419,21 @@ function Player({ questions, settings, setSettings, goTo }) {
   const [questionIndex, setQuestionIndex] = React.useState(0)
   const [seconds, setSeconds] = React.useState(questionSeconds)
   const [revealed, setRevealed] = React.useState(false)
+  const [phase, setPhase] = React.useState('idle')
+  const [runId, setRunId] = React.useState(0)
+  const onlineAudioRef = React.useRef(null)
+  const narrationStopRef = React.useRef(null)
+  const narrationStartedInGestureRef = React.useRef(false)
   const scale = useStageScale(96)
+
+  React.useEffect(() => {
+    return () => {
+      narrationStopRef.current?.()
+      onlineAudioRef.current?.pause()
+      onlineAudioRef.current?.removeAttribute('src')
+      onlineAudioRef.current = null
+    }
+  }, [])
 
   React.useEffect(() => { sound.setMuted(!settings.sound) }, [settings.sound])
 
@@ -357,17 +448,54 @@ function Player({ questions, settings, setSettings, goTo }) {
   }
 
   const restart = React.useCallback(() => {
+    narrationStopRef.current?.()
+    narrationStopRef.current = null
+    sound.start()
+    if (settings.readQuestion) {
+      // Start the first audio from the Start button gesture. Reusing this
+      // element lets later questions continue on browsers with autoplay rules.
+      narrationStartedInGestureRef.current = true
+      narrationStopRef.current = playSinhala(questions[0]?.question || '', () => {
+        setSeconds(questionSeconds)
+        setPhase('countdown')
+      }, onlineAudioRef.current)
+    }
     setQuestionIndex(0)
     setSeconds(questionSeconds)
     setRevealed(false)
     setFinished(false)
     setStarted(true)
-    sound.start()
-  }, [questionSeconds])
+    setPhase(settings.readQuestion ? 'reading' : 'countdown')
+    setRunId((value) => value + 1)
+  }, [questionSeconds, settings.readQuestion, questions])
+
+  // Read each Sinhala question first. The timer does not begin until the free
+  // browser voice finishes speaking, which keeps the five seconds usable.
+  React.useEffect(() => {
+    if (!started || finished || revealed) return undefined
+    if (!settings.readQuestion) {
+      setPhase('countdown')
+      return undefined
+    }
+    if (narrationStartedInGestureRef.current) {
+      narrationStartedInGestureRef.current = false
+      return undefined
+    }
+    setPhase('reading')
+    const stopNarration = playSinhala(questions[questionIndex]?.question || '', () => {
+      setSeconds(questionSeconds)
+      setPhase('countdown')
+    }, onlineAudioRef.current)
+    narrationStopRef.current = stopNarration
+    return () => {
+      stopNarration()
+      if (narrationStopRef.current === stopNarration) narrationStopRef.current = null
+    }
+  }, [started, finished, revealed, questionIndex, settings.readQuestion, questionSeconds, questions, runId])
 
   // Countdown: one tick per second, then the beat drop and the answer chime.
   React.useEffect(() => {
-    if (!started || finished || revealed) return undefined
+    if (!started || finished || revealed || phase !== 'countdown') return undefined
     const timer = window.setTimeout(() => {
       if (seconds <= 1) {
         setRevealed(true)
@@ -379,7 +507,7 @@ function Player({ questions, settings, setSettings, goTo }) {
       }
     }, 1000)
     return () => window.clearTimeout(timer)
-  }, [started, finished, revealed, seconds])
+  }, [started, finished, revealed, phase, seconds])
 
   // Reveal hold, then advance.
   React.useEffect(() => {
@@ -392,14 +520,16 @@ function Player({ questions, settings, setSettings, goTo }) {
         setQuestionIndex((index) => index + 1)
         setSeconds(questionSeconds)
         setRevealed(false)
+        setPhase(settings.readQuestion ? 'reading' : 'countdown')
         sound.whoosh()
       }
     }, REVEAL_MS)
     return () => window.clearTimeout(timer)
-  }, [started, finished, revealed, questionIndex, questions.length, questionSeconds])
+  }, [started, finished, revealed, questionIndex, questions.length, questionSeconds, settings.readQuestion])
 
   const current = questions[questionIndex]
-  const urgent = !revealed && started && !finished && seconds <= 3
+  const reading = started && !finished && !revealed && phase === 'reading'
+  const urgent = !revealed && !reading && started && !finished && seconds <= 3
   const accentColors = [template.vars['--t-accent'], template.vars['--t-accent2'], template.vars['--t-correct'], '#ffffff']
   const textScale = (TEXT_SCALES.find((item) => item.id === settings.textScale) || TEXT_SCALES[1]).value
   const questionSize = fitQuestion(current?.question, textScale)
@@ -407,6 +537,7 @@ function Player({ questions, settings, setSettings, goTo }) {
 
   return (
     <div className="player-page">
+      <audio ref={onlineAudioRef} className="narration-audio" preload="auto" playsInline aria-hidden="true" />
       <div className="recorder-toolbar" style={{ width: STAGE_W * scale }}>
         <button className="toolbar-button" onClick={() => goTo('admin')}><Icon name="edit" /> Admin</button>
         <span className="toolbar-size">1080 &times; 1920 &middot; {Math.round(scale * 100)}%</span>
@@ -428,17 +559,6 @@ function Player({ questions, settings, setSettings, goTo }) {
           <Backdrop kind={template.backdrop} motion={template.motion} colors={accentColors} video={`${import.meta.env.BASE_URL}bg/${template.video || `${template.id}.mp4`}`} />
           <div className="stage-vignette" />
           <div className="urgent-pulse" />
-
-          <header className="stage-header">
-            <span className="stage-brand"><i />{settings.brand || 'QUIZ TIME'}</span>
-            <span className="stage-count">{String(questionIndex + 1).padStart(2, '0')} / {String(questions.length).padStart(2, '0')}</span>
-          </header>
-
-          <div className="stage-progress" aria-label={`Question ${questionIndex + 1} of ${questions.length}`}>
-            {questions.map((_, index) => (
-              <span key={index} className={index < questionIndex || (index === questionIndex && revealed) ? 'done' : index === questionIndex && started && !finished ? 'active' : ''} />
-            ))}
-          </div>
 
           <AnimatePresence mode="wait">
             {!started ? (
@@ -467,7 +587,7 @@ function Player({ questions, settings, setSettings, goTo }) {
               <motion.section className="screen question-screen" key={questionIndex} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: .4, ease: [0.22, 1, 0.36, 1] }}>
                 <div className="question-tag">
                   <span className="pill small">Question {questionIndex + 1}</span>
-                  <motion.span className="hype" key={revealed ? 'r' : 'q'} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{revealed ? 'Answer revealed' : HYPE[questionIndex % HYPE.length]}</motion.span>
+                  <motion.span className="hype" key={reading ? 'reading' : revealed ? 'r' : 'q'} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{reading ? 'Listening...' : revealed ? 'Answer revealed' : HYPE[questionIndex % HYPE.length]}</motion.span>
                 </div>
 
                 <motion.h2 className="question-text" style={{ fontSize: questionSize }} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .4, delay: .06 }}>{current.question}</motion.h2>
@@ -507,14 +627,14 @@ function Player({ questions, settings, setSettings, goTo }) {
                     <motion.circle className="countdown-line" cx="60" cy="60" r="52" initial={{ pathLength: 1 }} animate={{ pathLength: revealed ? 1 : seconds / questionSeconds }} transition={{ duration: .5, ease: 'linear' }} />
                   </svg>
                   <AnimatePresence mode="wait">
-                    <motion.span key={revealed ? 'answer' : seconds} initial={{ opacity: 0, scale: .55 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.3 }} transition={{ duration: .18 }}>
-                      {revealed ? <AnimatedCheck /> : seconds}
+                    <motion.span key={reading ? 'reading' : revealed ? 'answer' : seconds} initial={{ opacity: 0, scale: .55 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.3 }} transition={{ duration: .18 }}>
+                      {reading ? <Icon name="voice" /> : revealed ? <AnimatedCheck /> : seconds}
                     </motion.span>
                   </AnimatePresence>
                 </motion.div>
 
                 <p className={`countdown-copy ${revealed ? 'is-correct' : ''} ${urgent ? 'is-urgent' : ''}`}>
-                  {revealed ? 'Correct answer' : urgent ? 'Lock it in!' : 'Choose your answer'}
+                  {revealed ? 'Correct answer' : reading ? 'Listen to the question' : urgent ? 'Lock it in!' : 'Choose your answer'}
                 </p>
 
                 {/* Fixed-height slot so the timer never shifts when the cue appears. */}
@@ -532,10 +652,6 @@ function Player({ questions, settings, setSettings, goTo }) {
             )}
           </AnimatePresence>
 
-          <footer className="stage-footer">
-            <span>Watch till the end</span>
-            <span className="footer-cta">Score 5/5?</span>
-          </footer>
         </motion.main>
         </div>
       </div>
