@@ -53,6 +53,7 @@ more templates: see `public/bg/README.md`.
 
 - **Timer** — every question uses a fixed 5-second answer timer after the question is read.
 - **Sinhala narration** — the local Vite server generates Sinhala MP3 audio with the free server-side Microsoft Edge Read Aloud voice, then the recorder starts the 5-second timer. It needs an internet connection but no API key or installed voice pack; the browser/device voice is only a fallback.
+- **Voice choice** — switch between the Thilini female neural voice and Sameera male neural voice in the timing panel.
 - **Text size** — S / M / L. Question and answer type also **auto-fits**: longer copy
   steps down a size automatically so nothing ever overflows the frame.
 - **Sound** — a blip each second, a tighter urgent blip in the last three, a bass beat

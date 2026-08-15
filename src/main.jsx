@@ -9,13 +9,17 @@ import './styles.css'
 const STORAGE_KEY = 'calm-quiz-studio-v1'
 const SETTINGS_KEY = 'calm-quiz-studio-settings-v1'
 const TIME_CHOICES = [5]
+const SINHALA_VOICES = [
+  { id: 'si-LK-ThiliniNeural', label: 'Thilini', note: 'Female neural' },
+  { id: 'si-LK-SameeraNeural', label: 'Sameera', note: 'Male neural' },
+]
 const REVEAL_MS = 2600
 const TEXT_SCALES = [
   { id: 'sm', label: 'S', value: 0.88 },
   { id: 'md', label: 'M', value: 1 },
   { id: 'lg', label: 'L', value: 1.14 },
 ]
-const DEFAULT_SETTINGS = { questionSeconds: 5, templateId: DEFAULT_TEMPLATE, sound: true, readQuestion: true, brand: 'QUIZ TIME', textScale: 'md' }
+const DEFAULT_SETTINGS = { questionSeconds: 5, templateId: DEFAULT_TEMPLATE, sound: true, readQuestion: true, voice: SINHALA_VOICES[0].id, brand: 'QUIZ TIME', textScale: 'md' }
 
 // Auto-fit: longer copy steps down a size so every question fills the same block
 // without ever overflowing the 1080x1920 frame.
@@ -68,6 +72,7 @@ function readSettings() {
       templateId: TEMPLATES.some((item) => item.id === saved.templateId) ? saved.templateId : DEFAULT_SETTINGS.templateId,
       sound: typeof saved.sound === 'boolean' ? saved.sound : true,
       readQuestion: true,
+      voice: SINHALA_VOICES.some((item) => item.id === saved.voice) ? saved.voice : DEFAULT_SETTINGS.voice,
       brand: typeof saved.brand === 'string' ? saved.brand.slice(0, 18) : DEFAULT_SETTINGS.brand,
       textScale: TEXT_SCALES.some((item) => item.id === saved.textScale) ? saved.textScale : DEFAULT_SETTINGS.textScale,
     }
@@ -247,6 +252,12 @@ function Admin({ questions, setQuestions, settings, setSettings, goTo }) {
                     <button type="button" key={item.id} className={settings.textScale === item.id ? 'selected' : ''} onClick={() => patchSettings({ textScale: item.id })} title={`Text size ${item.label}`}>{item.label}</button>
                   ))}
                 </div>
+                <label className="voice-select">
+                  <span>Sinhala voice</span>
+                  <select value={settings.voice} onChange={(event) => patchSettings({ voice: event.target.value })}>
+                    {SINHALA_VOICES.map((voice) => <option key={voice.id} value={voice.id}>{voice.label} — {voice.note}</option>)}
+                  </select>
+                </label>
                 <label className="switch">
                   <input type="checkbox" checked={settings.sound} onChange={(event) => patchSettings({ sound: event.target.checked })} />
                   <span className="switch-track"><i /></span>
@@ -365,11 +376,11 @@ function speakWithBrowserVoice(text, onDone) {
 
 // The local Vite endpoint uses Microsoft's free Edge Read Aloud Sinhala voice
 // server-side, avoiding browser CORS and installed-voice problems.
-function playSinhala(text, onDone, sharedAudio = null) {
+function playSinhala(text, onDone, sharedAudio = null, voice = 'si-LK-ThiliniNeural') {
   if (!text || typeof Audio === 'undefined') return speakWithBrowserVoice(text, onDone)
 
   const audio = sharedAudio || new Audio()
-  audio.src = `/api/sinhala-tts?text=${encodeURIComponent(text)}`
+  audio.src = `/api/sinhala-tts?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`
   audio.preload = 'auto'
   audio.playsInline = true
   audio.volume = 1
@@ -458,7 +469,7 @@ function Player({ questions, settings, setSettings, goTo }) {
       narrationStopRef.current = playSinhala(questions[0]?.question || '', () => {
         setSeconds(questionSeconds)
         setPhase('countdown')
-      }, onlineAudioRef.current)
+      }, onlineAudioRef.current, settings.voice)
     }
     setQuestionIndex(0)
     setSeconds(questionSeconds)
@@ -467,7 +478,7 @@ function Player({ questions, settings, setSettings, goTo }) {
     setStarted(true)
     setPhase(settings.readQuestion ? 'reading' : 'countdown')
     setRunId((value) => value + 1)
-  }, [questionSeconds, settings.readQuestion, questions])
+  }, [questionSeconds, settings.readQuestion, settings.voice, questions])
 
   // Read each Sinhala question first. The timer does not begin until the free
   // browser voice finishes speaking, which keeps the five seconds usable.
@@ -485,13 +496,13 @@ function Player({ questions, settings, setSettings, goTo }) {
     const stopNarration = playSinhala(questions[questionIndex]?.question || '', () => {
       setSeconds(questionSeconds)
       setPhase('countdown')
-    }, onlineAudioRef.current)
+    }, onlineAudioRef.current, settings.voice)
     narrationStopRef.current = stopNarration
     return () => {
       stopNarration()
       if (narrationStopRef.current === stopNarration) narrationStopRef.current = null
     }
-  }, [started, finished, revealed, questionIndex, settings.readQuestion, questionSeconds, questions, runId])
+  }, [started, finished, revealed, questionIndex, settings.readQuestion, settings.voice, questionSeconds, questions, runId])
 
   // Countdown: one tick per second, then the beat drop and the answer chime.
   React.useEffect(() => {
