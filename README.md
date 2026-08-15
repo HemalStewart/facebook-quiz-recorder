@@ -65,7 +65,7 @@ more templates: see `public/bg/README.md`.
 
 1. Open the recorder and make the window tall enough to show the whole frame.
 2. Capture only the quiz frame, not the toolbar above it.
-3. Click **Start quiz**. A 10s-per-question run is roughly 73 seconds.
+3. Click **Start quiz**. A five-question run is roughly 48 seconds, plus narration time.
 4. Export at 1080×1920, H.264/MP4.
 
 The frame is authored at exactly 1080×1920 and scaled to fit the window, so whatever
@@ -74,3 +74,9 @@ scale up in your editor without reflowing the layout.
 
 Quiz text and settings are stored in this browser's local storage. No account or
 server required.
+
+## Vercel
+
+Deploy the project root as a normal Vercel project. `api/sinhala-tts.js` is the
+serverless function used for Sinhala narration; do not deploy only the `dist/`
+folder. Vercel installs `msedge-tts` from `package.json` automatically.
